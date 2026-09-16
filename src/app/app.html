@@ -1,23 +1,62 @@
 <header class="header">
   <div class="header-inner">
-    <a href="/" class="brand" aria-label="Inicio">
-      <span class="brand-mark" aria-hidden="true">✦</span>
-      Galería de Fotos
+    <a href="#" class="brand" aria-label="Inicio">
+      @if (logoUrl) {
+        <img class="logo" [src]="logoUrl" alt="Logo de {{ nombreFotografa }}" />
+      } @else {
+        <span class="logo-placeholder">Acá va el logo</span>
+      }
     </a>
-    <a href="#eventos" class="nav-link">Eventos</a>
+    <div class="header-actions">
+      <nav class="nav" aria-label="Menú principal">
+        <a class="nav-link" href="#eventos">Eventos</a>
+        <a class="nav-link" href="#quienes-somos">Quién Soy</a>
+        <a class="nav-link" href="#contacto">Contacto</a>
+      </nav>
+      <a class="admin-link" [href]="adminUrl" title="Panel administrador" aria-label="Ir al administrador">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"
+          />
+        </svg>
+      </a>
+    </div>
   </div>
 </header>
 
-<main class="main">
-  <section class="hero">
-    <p class="hero-eyebrow">Fotografía de eventos</p>
-    <h1 class="hero-title">Tus fotos, evento por evento.</h1>
-    <p class="hero-subtitle">
-      Explorá los eventos disponibles y mirá las fotos que quedaron de cada uno.
-    </p>
+<main>
+  <section class="landing">
+    <div class="landing-media">
+      @if (fotoPrincipalUrl) {
+        <img
+          class="landing-photo"
+          [src]="fotoPrincipalUrl"
+          [alt]="'Foto de ' + nombreFotografa"
+          loading="lazy"
+          decoding="async"
+        />
+      } @else {
+        <div class="landing-photo-placeholder">
+          <p>Acá va la foto de {{ nombreFotografa }}</p>
+          <code>app.ts &rarr; fotoPrincipalUrl</code>
+        </div>
+      }
+    </div>
+
+    <div class="landing-content">
+      <p class="landing-tag">Fotografía de eventos</p>
+      <h1 class="landing-title">{{ tituloLanding }}</h1>
+      <p class="landing-desc">{{ descripcionLanding }}</p>
+      <a class="btn-events" href="#eventos">Ir a EVENTOS</a>
+    </div>
   </section>
 
-  <section id="eventos" class="events">
+  <section id="quienes-somos" class="section">
+    <h2 class="section-title">Quién Soy</h2>
+    <p class="section-text">{{ quienesSomosTexto }}</p>
+  </section>
+
+  <section id="eventos" class="section events">
     <h2 class="section-title">Eventos</h2>
 
     @if (cargando) {
@@ -75,14 +114,28 @@
       </div>
     }
   </section>
+
+  <section id="contacto" class="section">
+    <h2 class="section-title">Contacto</h2>
+    <p class="section-text">
+      ¿Querés reservar tu evento o comprar tus fotos? Escribime por cualquiera de estos medios.
+    </p>
+    <ul class="contact-list">
+      <li>
+        <span class="contact-label">WhatsApp</span>
+        <a class="contact-btn" [href]="waLink()">Escribime</a>
+      </li>
+      <li>
+        <span class="contact-label">Email</span>
+        <a class="contact-btn" [href]="'mailto:' + emailContacto">Escribime</a>
+      </li>
+    </ul>
+  </section>
 </main>
 
 <footer class="footer">
   <div class="footer-inner">
-    <span class="footer-brand">
-      <span class="brand-mark" aria-hidden="true">✦</span>
-      Galería de Fotos
-    </span>
+    <span class="footer-brand">{{ nombreFotografa }}</span>
     <p class="footer-copy">© {{ anio }} · Todos los derechos reservados.</p>
   </div>
 </footer>

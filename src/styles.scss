@@ -21,6 +21,7 @@
 
 html {
   color-scheme: dark;
+  scroll-behavior: smooth;
 }
 
 * {
@@ -29,7 +30,7 @@ html {
 }
 
 ::selection {
-  background: var(--accent-soft);
+  background: rgba(255, 255, 255, 0.14);
   color: var(--text);
 }
 

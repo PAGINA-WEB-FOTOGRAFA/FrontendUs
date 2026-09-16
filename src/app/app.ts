@@ -18,6 +18,18 @@ export class App implements OnInit {
   error = '';
   anio = new Date().getFullYear();
 
+  logoUrl = '/Logo.jpeg';
+  fotoPrincipalUrl = '/FotoPrincipal.jpeg';
+  nombreFotografa = 'Paola Peñalva';
+  tituloLanding = 'Paola Peñalva';
+  descripcionLanding =
+    'Capturamos la energía, la pasión y la emoción de cada momento  para convertirlos en recuerdos inolvidables ✨';
+  quienesSomosTexto =
+    'Detrás del lente hay alguien que disfruta cada historia que se cuenta en un evento. Esta es mi forma de trabajo y la dedicación que pongo en cada foto, para que ese recuerdo quede para siempre.';
+  emailContacto = 'paolapenalva2@gmail.com';
+  whatsappNumero = '+54 9 3534 78-2182';
+  adminUrl = 'http://localhost:4201';
+
   ngOnInit(): void {
     this.eventos.listar().subscribe({
       next: (lista) => {
@@ -38,5 +50,9 @@ export class App implements OnInit {
 
   fotoUrl(ruta: string): string {
     return `${API_URL}/${ruta}`;
+  }
+
+  waLink(): string {
+    return `https://wa.me/${this.whatsappNumero.replace(/\D/g, '')}`;
   }
 }
