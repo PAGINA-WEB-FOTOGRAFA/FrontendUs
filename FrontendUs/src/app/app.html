@@ -1,0 +1,208 @@
+<header class="header">
+  <div class="header-inner">
+    <button type="button" class="brand" (click)="volverAInicio()" aria-label="Inicio">
+      <span class="brand-mark" aria-hidden="true">✦</span>
+      Galería de Fotos
+    </button>
+    <nav class="header-nav">
+      <button type="button" class="nav-link" (click)="volverAInicio()">Eventos</button>
+      <button type="button" class="btn btn-light cart-btn" (click)="abrirCarrito()" aria-label="Abrir carrito">
+        Carrito
+        @if (cantidadCarrito > 0) {
+          <span class="cart-badge">{{ cantidadCarrito }}</span>
+        }
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main class="main">
+  @if (eventoSeleccionado) {
+    <section class="event-detail">
+      <div class="detail-top">
+        <button type="button" class="btn btn-light" (click)="volverAInicio()">← Volver a eventos</button>
+      </div>
+
+      <div class="event-detail-head">
+        <div class="event-detail-info">
+          <p class="eyebrow">Evento</p>
+          <h2 class="event-detail-title">{{ eventoSeleccionado.nombre }}</h2>
+          <p class="event-detail-meta">
+            {{ eventoSeleccionado.fecha_evento | date: 'dd/MM/yyyy' }}
+            @if (eventoSeleccionado.lugar) {
+              &nbsp;·&nbsp;{{ eventoSeleccionado.lugar }}
+            }
+          </p>
+        </div>
+        <p class="event-detail-price">
+          $ {{ eventoSeleccionado.precio_foto | number }}
+          <span>por foto</span>
+        </p>
+      </div>
+
+      @if (eventoSeleccionado.fotos !== undefined && eventoSeleccionado.fotos.length > 0) {
+        <div class="photo-grid">
+          @for (foto of eventoSeleccionado.fotos; track foto.id) {
+            <button type="button" class="photo-cell" (click)="abrirFoto(foto)">
+              <img [src]="fotoUrl(foto.ruta)" [alt]="eventoSeleccionado.nombre" loading="lazy" decoding="async" />
+            </button>
+          }
+        </div>
+      } @else if (eventoSeleccionado.fotos !== undefined && eventoSeleccionado.fotos.length === 0) {
+        <p class="muted">Este evento no tiene fotos publicadas todavía.</p>
+      } @else {
+        <p class="muted">Cargando fotos…</p>
+      }
+    </section>
+  } @else {
+    <section class="hero">
+      <p class="hero-eyebrow">Fotografía de eventos</p>
+      <h1 class="hero-title">Tus fotos, evento por evento.</h1>
+      <p class="hero-subtitle">
+        Explorá los eventos disponibles y mirá las fotos que quedaron de cada uno.
+      </p>
+    </section>
+
+    <section id="eventos" class="events">
+      <h2 class="section-title">Eventos</h2>
+
+      @if (cargando) {
+        <p class="muted">Cargando eventos…</p>
+      }
+
+      @if (!cargando && error) {
+        <div class="alert error">{{ error }}</div>
+      }
+
+      @if (!cargando && !error && eventosLista.length === 0) {
+        <p class="muted">Todavía no hay eventos disponibles.</p>
+      }
+
+      @if (eventosLista.length > 0) {
+        <div class="events-grid">
+          @for (evento of eventosLista; track evento.id) {
+            <article class="event-card" (click)="abrirEvento(evento)">
+              <figure class="event-cover">
+                @if (evento.portada) {
+                  <img [src]="fotoUrl(evento.portada)" [alt]="evento.nombre" loading="lazy" decoding="async" />
+                } @else {
+                  <div class="cover-fallback">
+                    <span aria-hidden="true">✦</span>
+                    Sin portada
+                  </div>
+                }
+                <span class="event-price-chip">$ {{ evento.precio_foto | number }}</span>
+              </figure>
+              <div class="event-body">
+                <h3 class="event-name">{{ evento.nombre }}</h3>
+                <p class="event-place">{{ evento.lugar || '—' }}</p>
+                <div class="event-foot">
+                  <p class="event-date">{{ evento.fecha_evento | date: 'dd/MM/yyyy' }}</p>
+                  <button type="button" class="btn btn-light btn-sm" (click)="abrirEvento(evento)">Ver fotos</button>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+  }
+</main>
+
+@if (fotoEnVista) {
+  <div class="zoom-overlay" (click)="cerrarFoto()">
+    <div class="zoom-view" (click)="$event.stopPropagation()">
+      <button type="button" class="zoom-close" (click)="cerrarFoto()" aria-label="Cerrar">✕</button>
+      <img class="zoom-img" [src]="fotoUrl(fotoEnVista.foto.ruta)" [alt]="fotoEnVista.eventoNombre" />
+      <div class="zoom-info">
+        <div class="zoom-data">
+          <p class="zoom-title">{{ fotoEnVista.eventoNombre }}</p>
+          <p class="zoom-price">$ {{ fotoEnVista.precio | number }}</p>
+        </div>
+        @if (enCarrito(fotoEnVista.foto.id)) {
+          <p class="cart-added">✓ Ya está en tu carrito</p>
+        } @else {
+          <button type="button" class="btn btn-primary" (click)="agregarAlCarrito()">Añadir al carrito</button>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+@if (carritoAbierto) {
+  <div class="drawer-overlay" (click)="cerrarCarrito()">
+    <aside class="cart-drawer" (click)="$event.stopPropagation()">
+      @if (!finalizando) {
+        <header class="drawer-head">
+          <h3 class="drawer-title">Tu carrito</h3>
+          <button type="button" class="btn btn-light" (click)="cerrarCarrito()">Cerrar</button>
+        </header>
+
+        @if (carrito.length === 0) {
+          <p class="muted">Todavía no agregaste fotos.</p>
+        } @else {
+          <ul class="cart-list">
+            @for (item of carrito; track item.foto.id) {
+              <li class="cart-item">
+                <img class="cart-thumb" [src]="fotoUrl(item.foto.ruta)" [alt]="item.eventoNombre" />
+                <div class="cart-item-info">
+                  <p class="cart-item-name">{{ item.eventoNombre }}</p>
+                  <p class="cart-item-price">$ {{ item.precio | number }}</p>
+                </div>
+                <button type="button" class="btn btn-light btn-sm" (click)="quitarDelCarrito(item.foto.id)" aria-label="Quitar del carrito">✕</button>
+              </li>
+            }
+          </ul>
+
+          <footer class="drawer-foot">
+            <p class="cart-total">Total: <strong>$ {{ totalCarrito | number }}</strong></p>
+            <button type="button" class="btn btn-primary btn-block" (click)="irAFinalizar()">Finalizar carrito</button>
+          </footer>
+        }
+      } @else {
+        <header class="drawer-head">
+          <h3 class="drawer-title">Completá tus datos</h3>
+          <button type="button" class="btn btn-light" (click)="volverDelCheckout()">← Volver</button>
+        </header>
+
+        @if (errorPago) {
+          <div class="alert error">{{ errorPago }}</div>
+        }
+
+        <form class="checkout-form" (ngSubmit)="finalizarCompra()">
+          <label class="field">
+            <span>Nombre</span>
+            <input type="text" [(ngModel)]="nombre" name="nombre" required placeholder="Tu nombre" autocomplete="name" />
+          </label>
+          <label class="field">
+            <span>Teléfono</span>
+            <input type="tel" [(ngModel)]="telefono" name="telefono" required placeholder="Ej: 11 5555 1234" autocomplete="tel" />
+          </label>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" [(ngModel)]="email" name="email" required placeholder="tucorreo@mail.com" autocomplete="email" />
+          </label>
+
+          <div class="checkout-resumen">
+            <p>{{ carrito.length }} foto{{ carrito.length === 1 ? '' : 's' }} seleccionada{{ carrito.length === 1 ? '' : 's' }}</p>
+            <p class="cart-total">Total: <strong>$ {{ totalCarrito | number }}</strong></p>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block btn-pay" [disabled]="procesandoPago">
+            {{ procesandoPago ? 'Procesando…' : 'Pagar con Mercado Pago' }}
+          </button>
+        </form>
+      }
+    </aside>
+  </div>
+}
+
+<footer class="footer">
+  <div class="footer-inner">
+    <span class="footer-brand">
+      <span class="brand-mark" aria-hidden="true">✦</span>
+      Galería de Fotos
+    </span>
+    <p class="footer-copy">© {{ anio }} · Todos los derechos reservados.</p>
+  </div>
+</footer>
