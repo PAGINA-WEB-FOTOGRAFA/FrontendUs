@@ -74,9 +74,26 @@
     @if (eventosLista.length > 0) {
       <div class="events-grid">
         @for (evento of eventosLista; track evento.id) {
-          <article class="event-card">
+          <article
+            class="event-card"
+            role="button"
+            tabindex="0"
+            (click)="abrirEvento(evento)"
+            (keydown.enter.prevent)="abrirEvento(evento)"
+            (keydown.space.prevent)="abrirEvento(evento)"
+          >
             <div class="gallery">
-              @if (evento.fotos !== undefined && evento.fotos.length > 0) {
+              @if (evento.portada) {
+                <img
+                  class="thumb"
+                  [src]="fotoUrl(evento.portada)"
+                  [alt]="evento.nombre"
+                  width="800"
+                  height="600"
+                  loading="lazy"
+                  decoding="async"
+                />
+              } @else if (evento.fotos !== undefined && evento.fotos.length > 0) {
                 @for (foto of evento.fotos; track foto.id) {
                   <img
                     class="thumb"
@@ -108,6 +125,7 @@
                 $ {{ evento.precio_foto | number }}
                 <span>por foto</span>
               </p>
+              <button type="button" class="event-open" (click)="abrirEvento(evento)">Ver fotos</button>
             </div>
           </article>
         }
@@ -127,15 +145,224 @@
       </li>
       <li>
         <span class="contact-label">Email</span>
-        <a class="contact-btn" [href]="'mailto:' + emailContacto">Escribime</a>
+        <a class="contact-email" [href]="'mailto:' + emailContacto">{{ emailContacto }}</a>
       </li>
     </ul>
   </section>
 </main>
+
+@if (eventoAbierto) {
+  <div
+    class="lightbox"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'Galería de ' + eventoAbierto.nombre"
+    (click)="cerrarEvento()"
+  >
+    <div class="lightbox-content" (click)="$event.stopPropagation()">
+      <header class="lightbox-header">
+        <div>
+          <h3 class="lightbox-title">{{ eventoAbierto.nombre }}</h3>
+          <p class="lightbox-meta">
+            {{ eventoAbierto.fecha_evento | date: 'dd/MM/yyyy' }} · {{ eventoAbierto.lugar || '—' }}
+          </p>
+        </div>
+        <button class="lightbox-close" type="button" aria-label="Cerrar" (click)="cerrarEvento()">
+          <span aria-hidden="true">✕</span>
+        </button>
+      </header>
+
+      @if (eventoAbierto.fotos !== undefined && eventoAbierto.fotos.length > 0) {
+        <div class="lightbox-grid">
+          @for (foto of eventoAbierto.fotos; track foto.id) {
+            <figure class="photo-cell" [class.selected]="enCarrito(foto.id)">
+              <button
+                class="photo-cell-view"
+                type="button"
+                [attr.aria-label]="'Ver foto ' + ($index + 1) + ' en grande'"
+                (click)="verFoto(foto)"
+              >
+                <img
+                  class="photo-cell-img"
+                  [src]="fotoUrl(foto.ruta)"
+                  [alt]="eventoAbierto.nombre + ' — foto ' + ($index + 1)"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span class="photo-cell-zoom">Ver en grande</span>
+              </button>
+              <figcaption class="photo-cell-bar">
+                <span class="photo-cell-price">$ {{ eventoAbierto.precio_foto | number }}</span>
+                <button
+                  class="photo-toggle"
+                  [class.in-cart]="enCarrito(foto.id)"
+                  type="button"
+                  (click)="toggleFoto(foto)"
+                >
+                  {{ enCarrito(foto.id) ? 'Quitar del carrito' : 'Añadir al carrito' }}
+                </button>
+              </figcaption>
+            </figure>
+          }
+        </div>
+      } @else {
+        <div class="lightbox-empty">Este evento todavía no tiene fotos.</div>
+      }
+    </div>
+  </div>
+
+  @if (cantidadCarrito > 0) {
+    <div class="evento-cart-bar">
+      <div class="evento-cart-info">
+        <span class="evento-cart-count">{{ cantidadCarrito === 1 ? '1 foto' : cantidadCarrito + ' fotos' }}</span>
+        <span class="evento-cart-total">Total $ {{ total | number }}</span>
+      </div>
+      <button class="evento-cart-btn" type="button" (click)="abrirCarrito()">Ver carrito</button>
+    </div>
+  }
+
+  @if (fotoAmpliada) {
+    <div class="viewer" (click)="cerrarVisor()">
+      <header class="viewer-header">
+        <span class="viewer-title">{{ eventoAbierto.nombre }}</span>
+        <button class="viewer-close" type="button" aria-label="Cerrar" (click)="cerrarVisor()">
+          <span aria-hidden="true">✕</span>
+        </button>
+      </header>
+
+      <div class="viewer-stage" (click)="$event.stopPropagation()">
+        <button class="viewer-nav prev" type="button" aria-label="Foto anterior" (click)="anterior()">
+          <span aria-hidden="true">‹</span>
+        </button>
+        <img
+          class="viewer-img"
+          [src]="fotoUrl(fotoAmpliada.ruta)"
+          [alt]="eventoAbierto.nombre"
+        />
+        <button class="viewer-nav next" type="button" aria-label="Foto siguiente" (click)="siguiente()">
+          <span aria-hidden="true">›</span>
+        </button>
+      </div>
+
+      <footer class="viewer-footer" (click)="$event.stopPropagation()">
+        <span class="viewer-price">$ {{ eventoAbierto.precio_foto | number }}</span>
+        <button
+          class="photo-toggle"
+          [class.in-cart]="enCarrito(fotoAmpliada.id)"
+          type="button"
+          (click)="toggleFoto(fotoAmpliada)"
+        >
+          {{ enCarrito(fotoAmpliada.id) ? 'Quitar del carrito' : 'Añadir al carrito' }}
+        </button>
+      </footer>
+    </div>
+  }
+}
+
+@if (!eventoAbierto) {
+  <button class="cart-fab" type="button" (click)="abrirCarrito()" aria-label="Abrir carrito">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2ZM2 2v2h2l3.6 7.6-1.35 2.45A2 2 0 0 0 8 17h11v-2H8.45l-.84-1.5L13 8l5-9-1.2-.7L12.6 6H6.4L4.2 2H2Zm15 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2Z"
+      />
+    </svg>
+    <span class="cart-fab-count">{{ cantidadCarrito }}</span>
+  </button>
+}
+
+@if (carritoAbierto) {
+  <div class="cart-overlay" (click)="cerrarCarrito()"></div>
+
+  <aside class="cart-drawer" role="dialog" aria-modal="true" aria-label="Carrito de fotos">
+    <header class="cart-header">
+      <h3 class="cart-title">Tu carrito</h3>
+      <button class="cart-close" type="button" aria-label="Cerrar carrito" (click)="cerrarCarrito()">
+        <span aria-hidden="true">✕</span>
+      </button>
+    </header>
+
+    @if (carritoItems.length === 0) {
+      <p class="cart-empty">Todavía no seleccionaste fotos. Entrá a un evento y elegí las que quieras.</p>
+    } @else {
+      <ul class="cart-list">
+        @for (item of carritoItems; track item.fotoId) {
+          <li class="cart-item">
+            <img class="cart-item-img" [src]="fotoUrl(item.ruta)" alt="" loading="lazy" />
+            <div class="cart-item-info">
+              <span class="cart-item-event">{{ item.eventoNombre }}</span>
+              <span class="cart-item-foto">{{ item.nombreFoto }}</span>
+              <span class="cart-item-price">$ {{ item.precio | number }}</span>
+            </div>
+            <button
+              class="cart-item-remove"
+              type="button"
+              [attr.aria-label]="'Quitar foto del carrito'"
+              (click)="quitarDelCarrito(item.fotoId)"
+            >
+              <span aria-hidden="true">✕</span>
+            </button>
+          </li>
+        }
+      </ul>
+
+      <div class="cart-summary">
+        <div class="cart-line">
+          <span>Subtotal</span>
+          <span>$ {{ subtotal | number }}</span>
+        </div>
+        <div class="cart-line total">
+          <span>Total</span>
+          <span>$ {{ total | number }}</span>
+        </div>
+      </div>
+
+      <button class="btn-checkout" type="button" (click)="abrirCheckout()">Finalizar compra</button>
+      <button class="btn-clear" type="button" (click)="vaciarCarrito()">Vaciar carrito</button>
+    }
+  </aside>
+}
+
+@if (checkoutAbierto) {
+  <div class="checkout-backdrop" (click)="cerrarCheckout()">
+    <div class="checkout-panel" (click)="$event.stopPropagation()">
+      <h3 class="checkout-title">Completá tus datos</h3>
+      <p class="checkout-sub">Vas a comprar {{ cantidadCarrito }} foto/s · Total $ {{ total | number }}</p>
+
+      @if (errorCheckout) {
+        <div class="alert error">{{ errorCheckout }}</div>
+      }
+
+      <label class="form-field">
+        <span class="form-label">Nombre *</span>
+        <input class="form-input" type="text" [(ngModel)]="datosCompra.nombre" placeholder="Tu nombre" />
+      </label>
+      <label class="form-field">
+        <span class="form-label">Apellido</span>
+        <input class="form-input" type="text" [(ngModel)]="datosCompra.apellido" placeholder="Tu apellido" />
+      </label>
+      <label class="form-field">
+        <span class="form-label">WhatsApp *</span>
+        <input class="form-input" type="tel" [(ngModel)]="datosCompra.whatsapp" placeholder="Tu número de WhatsApp" />
+      </label>
+      <label class="form-field">
+        <span class="form-label">Email *</span>
+        <input class="form-input" type="email" [(ngModel)]="datosCompra.email" placeholder="tu@email.com" />
+      </label>
+
+      <div class="checkout-actions">
+        <button class="btn-light" type="button" (click)="cerrarCheckout()">Volver</button>
+        <button class="btn-primary" type="button" [disabled]="enviandoCheckout" (click)="finalizarCompra()">
+          {{ enviandoCheckout ? 'Procesando…' : 'Ir a pagar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
 
 <footer class="footer">
   <div class="footer-inner">
     <span class="footer-brand">{{ nombreFotografa }}</span>
     <p class="footer-copy">© {{ anio }} · Todos los derechos reservados.</p>
   </div>
+  <p class="footer-webxia">DISEÑADO Y DESARROLLADO POR <strong>WEBXIA</strong></p>
 </footer>

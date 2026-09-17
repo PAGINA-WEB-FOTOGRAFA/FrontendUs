@@ -15,4 +15,8 @@ export class ApiService {
   get(endpoint: string): Observable<any> {
     return this.http.get<any>(`${API_URL}/${endpoint}`);
   }
+
+  post(endpoint: string, data: any): Observable<any> {
+    return this.http.post<any>(`${API_URL}/${endpoint}`, data);
+  }
 }

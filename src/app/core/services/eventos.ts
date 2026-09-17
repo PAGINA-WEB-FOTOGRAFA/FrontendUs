@@ -16,6 +16,7 @@ export interface Evento {
   fecha_evento: string;
   precio_foto: number;
   activo: number;
+  portada?: string | null;
   fecha_creacion?: string;
   fotos?: Foto[];
 }
